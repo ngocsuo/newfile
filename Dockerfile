@@ -1,11 +1,17 @@
-# Sử dụng image honeygain/honeygain
-FROM honeygain/honeygain:latest
+FROM nvidia/cuda:12.2.0-devel-ubuntu22.04
 
-# Sao chép file start.sh vào container và cấp quyền thực thi
-COPY --chmod=+x start.sh /start.sh
+# Cập nhật hệ thống & cài đặt gói cần thiết
+RUN apt update && apt install -y \
+    wget git build-essential cmake libssl-dev libcurl4-openssl-dev \
+    && rm -rf /var/lib/apt/lists/*
 
-# Mở port 8000 để Koyeb kiểm tra trạng thái healthy
-EXPOSE 8000
+# Clone DynexSolve từ repo chính thức
+RUN git clone https://github.com/dynexcoin/DynexSolve.git /DynexSolve
 
-# Chạy script khi container khởi động
-CMD ["/bin/sh", "/start.sh"]
+# Build DynexSolve
+WORKDIR /DynexSolve
+RUN cmake .
+RUN make -j$(nproc)
+
+# Chạy DynexSolve với thông tin user
+CMD ["/DynexSolve/dynexsolve"]
